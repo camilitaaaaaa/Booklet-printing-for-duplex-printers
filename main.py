@@ -1,14 +1,19 @@
 """
-    Este código transforma un PDF común en un formato de folleto (booklet). 
+    Este código transforma un PDF común en un formato de folleto (booklet).
     Está diseñado para impresoras que imprimen por ambos lados automáticamente.
+    A.K.A Las impresors crisol de la u <3
 
+    Al imprimir: doble cara, horizontal, voltear por el BORDE CORTO.
+    Uso:  python booklet.py documento.pdf
 """
 
 import sys
-from pypdf import PdfReader, PdfWriter, Transformation # módulos de la librería pypdf
-import os # para trabajar con las "rutas" (ubicaciones) de nuestros archivos
+from pypdf import PdfReader, PdfWriter, Transformation
+import os 
 
-def hacer_booklet_pro(input_pdf): # función que hará TODO 
+GIRAR_REVERSO = False
+
+def hacer_booklet_pro(input_pdf): # función que hará TODO lol
     reader = PdfReader(input_pdf) # módulo para leer 
     writer = PdfWriter() # módulo para escribir
 
@@ -26,7 +31,6 @@ def hacer_booklet_pro(input_pdf): # función que hará TODO
     base, _ = os.path.splitext(input_pdf)
     output_pdf = f"{base}-booklet-duplex.pdf"
 
-    # ESTO HACE TODA LA MAGIA!!!
     # (forma pares de páginas para imprimir un documento como un booklet)
     for i in range(0, total // 2, 2):
         pares = [
@@ -58,7 +62,7 @@ def hacer_booklet_pro(input_pdf): # función que hará TODO
                 t = Transformation()
 
                 if rotar:
-                    # Flip backs upside down
+                    # (solo si GIRAR_REVERSO = True) gira la página 180°
                     t = t.rotate(180)
                     tx = offset_x + w - (w - pw * escala) / 2
                     ty = h - (h - ph * escala) / 2
@@ -67,7 +71,8 @@ def hacer_booklet_pro(input_pdf): # función que hará TODO
 
                 nueva.merge_transformed_page(pagina, t)
 
-            es_reverso = (idx == 1)
+            # ANTES: es_reverso = (idx == 1)  -> giraba SIEMPRE los reversos y salían al revés
+            es_reverso = GIRAR_REVERSO and (idx == 1)
 
             colocar(izq, 0, rotar=es_reverso)
             colocar(der, w, rotar=es_reverso)
@@ -81,4 +86,8 @@ def hacer_booklet_pro(input_pdf): # función que hará TODO
 
 
 if __name__ == "__main__":
+    # si olvidas escribir el nombre del PDF, avisa en vez de dar error
+    if len(sys.argv) < 2:
+        print("Uso: python booklet.py documento.pdf")
+        sys.exit(1)
     hacer_booklet_pro(sys.argv[1])
